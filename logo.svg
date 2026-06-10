@@ -1,26 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <!-- CashPanda logo -->
-  <!-- orelhas -->
-  <circle cx="29" cy="27" r="15" fill="#111827"/>
-  <circle cx="91" cy="27" r="15" fill="#111827"/>
-  <circle cx="29" cy="27" r="7" fill="#374151"/>
-  <circle cx="91" cy="27" r="7" fill="#374151"/>
-  <!-- cara -->
-  <circle cx="60" cy="62" r="40" fill="#f8fafc"/>
-  <!-- manchas dos olhos -->
-  <ellipse cx="44" cy="56" rx="11" ry="13.5" fill="#111827" transform="rotate(-15 44 56)"/>
-  <ellipse cx="76" cy="56" rx="11" ry="13.5" fill="#111827" transform="rotate(15 76 56)"/>
-  <!-- olhos com € -->
-  <circle cx="46" cy="56" r="6" fill="#ffffff"/>
-  <circle cx="74" cy="56" r="6" fill="#ffffff"/>
-  <text x="46" y="59.8" font-size="10" font-weight="bold" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif">€</text>
-  <text x="74" y="59.8" font-size="10" font-weight="bold" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif">€</text>
-  <!-- nariz e sorriso -->
-  <path d="M55.5 71.5 Q60 68.5 64.5 71.5 Q60 77 55.5 71.5 Z" fill="#111827"/>
-  <path d="M60 76 q0 6 -7 7.5 M60 76 q0 6 7 7.5" stroke="#111827" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <!-- moeda -->
-  <circle cx="92" cy="92" r="21" fill="#fbbf24" stroke="#d97706" stroke-width="3.5"/>
-  <text x="92" y="100.5" font-size="24" font-weight="bold" text-anchor="middle" fill="#92400e" font-family="Arial, sans-serif">€</text>
-  <!-- patinha a segurar a moeda -->
-  <circle cx="76" cy="80" r="7.5" fill="#111827"/>
+  <!-- Splitz logo: moeda dividida ao meio -->
+  <defs>
+    <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="gPink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#db2777"/><stop offset="1" stop-color="#f472b6"/>
+    </linearGradient>
+  </defs>
+  <!-- metade esquerda (azul) -->
+  <g transform="translate(-3,0)">
+    <path d="M60 16 L52 42 L67 62 L54 82 L60 104 A44 44 0 0 1 60 16 Z" fill="url(#gBlue)"/>
+    <text x="38" y="70" font-size="28" font-weight="bold" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif">€</text>
+  </g>
+  <!-- metade direita (rosa) -->
+  <g transform="translate(3,0)">
+    <path d="M60 16 L52 42 L67 62 L54 82 L60 104 A44 44 0 0 0 60 16 Z" fill="url(#gPink)"/>
+    <text x="84" y="69" font-size="24" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif">♥</text>
+  </g>
 </svg>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CashPanda 🐼 Despesas do Casal</title>
+<title>Splitz — Despesas do Casal</title>
 <link rel="icon" type="image/svg+xml" href="logo.svg">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -96,14 +96,14 @@ td.num{text-align:right;font-weight:600;white-space:nowrap}
 </head>
 <body>
 <div id="loginOverlay" class="hidden">
-  <img src="logo.svg" alt="CashPanda" style="width:96px;height:96px">
-  <h2>CashPanda</h2>
+  <img src="logo.svg" alt="Splitz" style="width:96px;height:96px">
+  <h2>Splitz</h2>
   <p class="sub-title">Quem está a entrar?</p>
   <div class="profiles" id="profileCards"></div>
 </div>
 <div class="container">
   <header>
-    <h1 style="display:flex;align-items:center;gap:10px"><img src="logo.svg" alt="" style="width:38px;height:38px">CashPanda</h1>
+    <h1 style="display:flex;align-items:center;gap:10px"><img src="logo.svg" alt="" style="width:38px;height:38px">Splitz</h1>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     <div class="user-chip" id="userChip" title="Trocar de utilizador"><span class="dot"></span><span class="uname"></span><span class="swap">⇄</span></div>
     <div class="month-nav">
@@ -499,7 +499,7 @@ function bind(){
     const data=JSON.stringify({version:1,exported:new Date().toISOString(),people,categories,expenses,recurring},null,2);
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
-    a.download='cashpanda-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Backup exportado ✓');};
+    a.download='splitz-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Backup exportado ✓');};
 
   $('#importBtn').onclick=()=>$('#importFile').click();
   $('#importFile').onchange=async e=>{

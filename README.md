@@ -1,8 +1,8 @@
-# 🐼 CashPanda
+# Splitz
 
-<img src="logo.svg" width="110" alt="CashPanda logo">
+<img src="logo.svg" width="110" alt="Splitz logo">
 
-O panda que toma conta das vossas despesas. App de browser para gestão de despesas a dois (Alexandre & Carmen). Ficheiro único, sem servidor — os dados ficam guardados no próprio browser (IndexedDB).
+Contas a meias, sem dramas. App de browser para gestão de despesas a dois (Alexandre & Carmen). Ficheiro único, sem servidor — os dados ficam guardados no próprio browser (IndexedDB).
 
 ## Como usar
 
