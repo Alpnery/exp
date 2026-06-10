@@ -72,14 +72,41 @@ td.num{text-align:right;font-weight:600;white-space:nowrap}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--accent);color:var(--text);padding:10px 22px;border-radius:12px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:99}
 #toast.show{opacity:1}
 .stat-list .list-item .value{font-weight:700}
+/* Login */
+#loginOverlay{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:20px}
+#loginOverlay.hidden{display:none}
+#loginOverlay h2{font-size:1.5rem;background:linear-gradient(90deg,var(--accent),var(--p2));-webkit-background-clip:text;background-clip:text;color:transparent}
+#loginOverlay .sub-title{color:var(--muted);margin-top:-18px}
+.profiles{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
+.profile-card{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:28px 40px;cursor:pointer;text-align:center;min-width:170px;transition:transform .15s,border-color .15s}
+.profile-card:hover{transform:translateY(-3px)}
+.profile-card.p1:hover{border-color:var(--p1)}
+.profile-card.p2:hover{border-color:var(--p2)}
+.profile-card .avatar{width:64px;height:64px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:#fff}
+.profile-card.p1 .avatar{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+.profile-card.p2 .avatar{background:linear-gradient(135deg,#db2777,#f472b6)}
+.profile-card .pname{font-weight:600;font-size:1.05rem}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px 12px;cursor:pointer;font-size:.88rem}
+.user-chip:hover{border-color:var(--accent)}
+.user-chip .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff}
+.user-chip.p1 .dot{background:var(--p1)} .user-chip.p2 .dot{background:var(--p2)}
+.user-chip .swap{color:var(--muted);font-size:.75rem}
 </style>
 </head>
 <body>
+<div id="loginOverlay" class="hidden">
+  <h2>💶 Despesas do Casal</h2>
+  <p class="sub-title">Quem está a entrar?</p>
+  <div class="profiles" id="profileCards"></div>
+</div>
 <div class="container">
   <header>
     <h1>💶 Despesas do Casal</h1>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="user-chip" id="userChip" title="Trocar de utilizador"><span class="dot"></span><span class="uname"></span><span class="swap">⇄</span></div>
     <div class="month-nav">
       <button id="prevM">‹</button><span id="monthLabel"></span><button id="nextM">›</button>
+    </div>
     </div>
   </header>
 
@@ -205,8 +232,32 @@ const DEFAULT_CATS=['Casa','Supermercado','Restaurantes','Transportes','Saúde',
 
 let db, expenses=[], recurring=[], categories=[], people={p1:'Alexandre',p2:'Carmen'};
 let editId=null, charts={};
+let currentUser=null;
 const now=new Date();
 let ym=now.toISOString().slice(0,7);
+
+/* ---------- Perfil / Login ---------- */
+function showLogin(){
+  $('#profileCards').innerHTML=['p1','p2'].map(p=>
+    `<div class="profile-card ${p}" data-user="${p}"><div class="avatar">${people[p].charAt(0).toUpperCase()}</div><div class="pname">${people[p]}</div></div>`
+  ).join('');
+  $('#loginOverlay').classList.remove('hidden');
+}
+function loginAs(p){
+  currentUser=p;
+  localStorage.setItem('appexpense_user',p);
+  $('#loginOverlay').classList.add('hidden');
+  applyUser();
+}
+function applyUser(){
+  if(!currentUser)return;
+  const chip=$('#userChip');
+  chip.className='user-chip '+currentUser;
+  chip.querySelector('.dot').textContent=people[currentUser].charAt(0).toUpperCase();
+  chip.querySelector('.uname').textContent=people[currentUser];
+  if($('#fPayer').options.length)$('#fPayer').value=currentUser;
+  if($('#rPayer').options.length)$('#rPayer').value=currentUser;
+}
 
 /* ---------- IndexedDB ---------- */
 function openDB(){return new Promise((res,rej)=>{
@@ -390,6 +441,7 @@ function bind(){
       $('#formTitle').textContent='Nova despesa';$('#fSubmit').textContent='Adicionar';toast('Despesa atualizada ✓');}
     else{exp.id=await put('expenses',exp);expenses.push(exp);toast('Despesa adicionada ✓');}
     e.target.reset();$('#fDate').value=new Date().toISOString().slice(0,10);
+    if(currentUser)$('#fPayer').value=currentUser;
     ym=exp.date.slice(0,7);render();};
 
   $('#expTable').onclick=async e=>{
@@ -404,7 +456,9 @@ function bind(){
   $('#recForm').onsubmit=async e=>{e.preventDefault();
     const r={name:$('#rName').value.trim(),amount:parseFloat($('#rAmount').value),category:$('#rCat').value,payer:$('#rPayer').value,day:+$('#rDay').value};
     r.id=await put('recurring',r);recurring.push(r);
-    await autoLaunchRecurring();e.target.reset();$('#rDay').value=1;render();toast('Recorrente adicionada ✓');};
+    await autoLaunchRecurring();e.target.reset();$('#rDay').value=1;
+    if(currentUser)$('#rPayer').value=currentUser;
+    render();toast('Recorrente adicionada ✓');};
 
   $('#recList').onclick=async e=>{const id=e.target.dataset.rdel;
     if(id&&confirm('Apagar esta recorrente? (despesas já lançadas mantêm-se)')){
@@ -412,7 +466,12 @@ function bind(){
 
   $('#savePeople').onclick=async()=>{
     people={p1:$('#setP1').value.trim()||'Pessoa 1',p2:$('#setP2').value.trim()||'Pessoa 2'};
-    await put('meta',{key:'people',value:people});fillSelects();render();toast('Nomes guardados ✓');};
+    await put('meta',{key:'people',value:people});fillSelects();applyUser();render();toast('Nomes guardados ✓');};
+
+  $('#userChip').onclick=()=>showLogin();
+  $('#profileCards').onclick=e=>{
+    const card=e.target.closest('.profile-card');
+    if(card)loginAs(card.dataset.user);};
 
   $('#addCat').onclick=async()=>{
     const name=$('#newCatName').value.trim();if(!name)return;
@@ -474,7 +533,11 @@ function bind(){
   recurring=await getAll('recurring');
   await autoLaunchRecurring();
   $('#fDate').value=new Date().toISOString().slice(0,10);
-  fillSelects();bind();render();
+  fillSelects();bind();
+  const saved=localStorage.getItem('appexpense_user');
+  if(saved==='p1'||saved==='p2'){currentUser=saved;applyUser();}
+  else showLogin();
+  render();
 })();
 </script>
 </body>
