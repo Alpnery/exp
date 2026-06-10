@@ -1,6 +1,8 @@
-# 💶 Despesas do Casal
+# 🐼 CashPanda
 
-App de browser para gestão de despesas a dois (Alexandre & Carmen). Ficheiro único, sem servidor — os dados ficam guardados no próprio browser (IndexedDB).
+<img src="logo.svg" width="110" alt="CashPanda logo">
+
+O panda que toma conta das vossas despesas. App de browser para gestão de despesas a dois (Alexandre & Carmen). Ficheiro único, sem servidor — os dados ficam guardados no próprio browser (IndexedDB).
 
 ## Como usar
 
