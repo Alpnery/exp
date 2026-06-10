@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Despesas — Alexandre &amp; Carmen</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0e1116; --card:#161b22; --card2:#1c232d; --border:#242c37;
+  --text:#e6edf3; --muted:#8b97a5; --accent:#818cf8; --accent2:#a78bfa;
+  --p1:#60a5fa; --p2:#f472b6; --green:#34d399; --red:#f87171; --amber:#fbbf24;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+header h1{font-size:1.35rem;background:linear-gradient(90deg,var(--accent),var(--p2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.month-nav{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px 10px}
+.month-nav button{background:none;border:none;color:var(--accent);font-size:1.2rem;cursor:pointer;padding:2px 8px;border-radius:8px}
+.month-nav button:hover{background:var(--card2)}
+.month-nav span{font-weight:600;min-width:140px;text-align:center}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+nav.tabs button{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:500}
+nav.tabs button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+section.tab{display:none}
+section.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.card .label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.card .value{font-size:1.45rem;font-weight:700}
+.card .sub{color:var(--muted);font-size:.8rem;margin-top:4px}
+.value.c-p1{color:var(--p1)} .value.c-p2{color:var(--p2)} .value.c-green{color:var(--green)} .value.c-amber{color:var(--amber)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.card h3{font-size:.95rem;margin-bottom:12px;color:var(--text)}
+.chart-box{position:relative;height:260px}
+.budget-item{margin-bottom:12px}
+.budget-item .row{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:4px}
+.budget-item .bar{height:8px;background:var(--card2);border-radius:6px;overflow:hidden}
+.budget-item .fill{height:100%;border-radius:6px;background:var(--accent);transition:width .3s}
+.budget-item .fill.over{background:var(--red)}
+.budget-item .fill.warn{background:var(--amber)}
+form.inline{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;align-items:end;margin-bottom:16px}
+form.inline label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted)}
+input,select{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:9px;font-size:.9rem;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+button.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;padding:10px 18px;border-radius:9px;cursor:pointer;font-weight:600;font-size:.9rem}
+button.btn:hover{opacity:.9}
+button.btn.ghost{background:var(--card2);border:1px solid var(--border);color:var(--text)}
+button.btn.danger{background:var(--red);color:#fff}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select{width:auto;flex:1;min-width:130px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{color:var(--muted);text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;padding:8px;border-bottom:1px solid var(--border)}
+td{padding:9px 8px;border-bottom:1px solid var(--border)}
+td.num{text-align:right;font-weight:600;white-space:nowrap}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.75rem;font-weight:500}
+.tag.p1{background:rgba(96,165,250,.15);color:var(--p1)}
+.tag.p2{background:rgba(244,114,182,.15);color:var(--p2)}
+.tag.cat{background:rgba(129,140,248,.13);color:var(--accent)}
+.actions button{background:none;border:none;cursor:pointer;font-size:.95rem;padding:3px 6px;opacity:.7}
+.actions button:hover{opacity:1}
+.empty{color:var(--muted);text-align:center;padding:24px;font-size:.9rem}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
+.list-item:last-child{border-bottom:none}
+.muted{color:var(--muted);font-size:.82rem}
+.settings-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.settings-row input{width:auto;flex:1;min-width:120px}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.note{background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:10px;padding:10px 14px;font-size:.84rem;color:var(--muted);margin-bottom:14px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--accent);color:var(--text);padding:10px 22px;border-radius:12px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:99}
+#toast.show{opacity:1}
+.stat-list .list-item .value{font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>💶 Despesas do Casal</h1>
+    <div class="month-nav">
+      <button id="prevM">‹</button><span id="monthLabel"></span><button id="nextM">›</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="resumo" class="active">Resumo</button>
+    <button data-tab="despesas">Despesas</button>
+    <button data-tab="recorrentes">Recorrentes</button>
+    <button data-tab="estatisticas">Estatísticas</button>
+    <button data-tab="definicoes">Definições</button>
+  </nav>
+
+  <!-- RESUMO -->
+  <section class="tab active" id="tab-resumo">
+    <div class="cards">
+      <div class="card"><div class="label">Total do mês</div><div class="value" id="sumTotal">€0,00</div><div class="sub" id="sumCount"></div></div>
+      <div class="card"><div class="label" id="lblP1">Alexandre pagou</div><div class="value c-p1" id="sumP1">€0,00</div></div>
+      <div class="card"><div class="label" id="lblP2">Carmen pagou</div><div class="value c-p2" id="sumP2">€0,00</div></div>
+      <div class="card"><div class="label">Acerto de contas</div><div class="value c-green" id="sumBalance">—</div><div class="sub" id="balanceSub"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Despesas por categoria</h3><div class="chart-box"><canvas id="chartCat"></canvas></div></div>
+      <div class="card"><h3>Orçamentos do mês</h3><div id="budgetList"></div></div>
+    </div>
+    <div class="card"><h3>Últimas despesas</h3><div id="recentList"></div></div>
+  </section>
+
+  <!-- DESPESAS -->
+  <section class="tab" id="tab-despesas">
+    <div class="card" style="margin-bottom:16px">
+      <h3 id="formTitle">Nova despesa</h3>
+      <form class="inline" id="expForm">
+        <label>Data<input type="date" id="fDate" required></label>
+        <label>Descrição<input type="text" id="fDesc" placeholder="Ex.: Continente" required></label>
+        <label>Valor (€)<input type="number" id="fAmount" step="0.01" min="0.01" placeholder="0,00" required></label>
+        <label>Categoria<select id="fCat"></select></label>
+        <label>Quem pagou<select id="fPayer"></select></label>
+        <button class="btn" type="submit" id="fSubmit">Adicionar</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="filters">
+        <input type="text" id="fltSearch" placeholder="🔍 Pesquisar...">
+        <select id="fltCat"><option value="">Todas as categorias</option></select>
+        <select id="fltPayer"><option value="">Ambos</option></select>
+      </div>
+      <table>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Pagou</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+        <tbody id="expTable"></tbody>
+      </table>
+      <div class="empty" id="expEmpty" style="display:none">Sem despesas neste mês.</div>
+    </div>
+  </section>
+
+  <!-- RECORRENTES -->
+  <section class="tab" id="tab-recorrentes">
+    <div class="note">💡 As despesas recorrentes são lançadas automaticamente no início de cada mês (renda, subscrições, contas fixas...).</div>
+    <div class="card" style="margin-bottom:16px">
+      <h3>Nova despesa recorrente</h3>
+      <form class="inline" id="recForm">
+        <label>Nome<input type="text" id="rName" placeholder="Ex.: Renda" required></label>
+        <label>Valor (€)<input type="number" id="rAmount" step="0.01" min="0.01" required></label>
+        <label>Categoria<select id="rCat"></select></label>
+        <label>Quem paga<select id="rPayer"></select></label>
+        <label>Dia do mês<input type="number" id="rDay" min="1" max="31" value="1" required></label>
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+    </div>
+    <div class="card"><h3>Recorrentes ativas</h3><div id="recList"></div></div>
+  </section>
+
+  <!-- ESTATÍSTICAS -->
+  <section class="tab" id="tab-estatisticas">
+    <div class="cards">
+      <div class="card"><div class="label">Média mensal (6 meses)</div><div class="value" id="stAvg">€0,00</div></div>
+      <div class="card"><div class="label">Total deste ano</div><div class="value c-amber" id="stYear">€0,00</div></div>
+      <div class="card"><div class="label">Maior despesa do mês</div><div class="value c-p2" id="stMax">—</div><div class="sub" id="stMaxSub"></div></div>
+      <div class="card"><div class="label">Registos totais</div><div class="value c-p1" id="stCount">0</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px"><h3>Evolução mensal (últimos 12 meses)</h3><div class="chart-box" style="height:300px"><canvas id="chartEvo"></canvas></div></div>
+    <div class="card stat-list"><h3>Top categorias deste ano</h3><div id="topCats"></div></div>
+  </section>
+
+  <!-- DEFINIÇÕES -->
+  <section class="tab" id="tab-definicoes">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Pessoas</h3>
+      <div class="settings-row">
+        <input type="text" id="setP1" placeholder="Pessoa 1">
+        <input type="text" id="setP2" placeholder="Pessoa 2">
+        <button class="btn" id="savePeople">Guardar</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3>Categorias e orçamentos mensais</h3>
+      <div id="catList"></div>
+      <div class="settings-row" style="margin-top:14px">
+        <input type="text" id="newCatName" placeholder="Nova categoria">
+        <input type="number" id="newCatBudget" placeholder="Orçamento € (opcional)" step="0.01" min="0">
+        <button class="btn" id="addCat">Adicionar</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Dados</h3>
+      <p class="muted">Os dados ficam guardados neste browser (IndexedDB). Usa exportar/importar para backup ou para sincronizar com outro computador.</p>
+      <div class="btn-row">
+        <button class="btn" id="exportBtn">⬇ Exportar dados (JSON)</button>
+        <button class="btn ghost" id="importBtn">⬆ Importar dados</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+        <button class="btn danger" id="resetBtn">🗑 Apagar tudo</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div id="toast"></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const fmt=v=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v||0);
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES_S=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const PALETTE=['#818cf8','#34d399','#f472b6','#fbbf24','#60a5fa','#a78bfa','#f87171','#2dd4bf','#fb923c','#94a3b8','#e879f9','#4ade80'];
+const DEFAULT_CATS=['Casa','Supermercado','Restaurantes','Transportes','Saúde','Lazer','Compras','Subscrições','Outros'].map((n,i)=>({name:n,budget:0,color:PALETTE[i%PALETTE.length]}));
+
+let db, expenses=[], recurring=[], categories=[], people={p1:'Alexandre',p2:'Carmen'};
+let editId=null, charts={};
+const now=new Date();
+let ym=now.toISOString().slice(0,7);
+
+/* ---------- IndexedDB ---------- */
+function openDB(){return new Promise((res,rej)=>{
+  const r=indexedDB.open('appexpense',1);
+  r.onupgradeneeded=e=>{const d=e.target.result;
+    d.createObjectStore('expenses',{keyPath:'id',autoIncrement:true});
+    d.createObjectStore('recurring',{keyPath:'id',autoIncrement:true});
+    d.createObjectStore('meta',{keyPath:'key'});};
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+function tx(store,mode,fn){return new Promise((res,rej)=>{
+  const t=db.transaction(store,mode), s=t.objectStore(store), out=fn(s);
+  t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined);
+  t.onerror=()=>rej(t.error);});}
+const getAll=s=>new Promise((res,rej)=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+const put=(s,o)=>tx(s,'readwrite',st=>st.put(o));
+const del=(s,id)=>tx(s,'readwrite',st=>st.delete(id));
+const clearStore=s=>tx(s,'readwrite',st=>st.clear());
+
+/* ---------- Helpers ---------- */
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function catColor(name){const c=categories.find(c=>c.name===name);return c?c.color:'#94a3b8';}
+function monthExpenses(m){return expenses.filter(e=>e.date.slice(0,7)===m);}
+function fmtDate(d){const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+y.slice(2);}
+function ymLabel(m){const[y,mo]=m.split('-');return MESES[+mo-1]+' '+y;}
+function shiftYm(m,n){const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+/* ---------- Recorrentes: lançamento automático ---------- */
+async function autoLaunchRecurring(){
+  const cur=new Date().toISOString().slice(0,7);
+  const today=new Date();
+  for(const r of recurring){
+    const exists=expenses.some(e=>e.recurringId===r.id&&e.date.slice(0,7)===cur);
+    if(!exists){
+      const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+      const day=Math.min(r.day||1,lastDay);
+      const exp={date:cur+'-'+String(day).padStart(2,'0'),desc:r.name,amount:r.amount,category:r.category,payer:r.payer,recurringId:r.id};
+      exp.id=await put('expenses',exp);
+      expenses.push(exp);
+    }
+  }
+}
+
+/* ---------- Render ---------- */
+function render(){
+  $('#monthLabel').textContent=ymLabel(ym);
+  renderSummary(); renderBudgets(); renderRecent(); renderChartCat();
+  renderExpenses(); renderRecurring(); renderStats(); renderSettings();
+}
+
+function renderSummary(){
+  const me=monthExpenses(ym);
+  const total=me.reduce((a,e)=>a+e.amount,0);
+  const t1=me.filter(e=>e.payer==='p1').reduce((a,e)=>a+e.amount,0);
+  const t2=total-t1;
+  $('#sumTotal').textContent=fmt(total);
+  $('#sumCount').textContent=me.length+' despesa'+(me.length===1?'':'s');
+  $('#lblP1').textContent=people.p1+' pagou'; $('#lblP2').textContent=people.p2+' pagou';
+  $('#sumP1').textContent=fmt(t1); $('#sumP2').textContent=fmt(t2);
+  const diff=t1-total/2;
+  const bal=$('#sumBalance'), sub=$('#balanceSub');
+  if(Math.abs(diff)<0.005){bal.textContent='✓ Equilibrado';bal.className='value c-green';sub.textContent='';}
+  else if(diff>0){bal.textContent=fmt(diff);bal.className='value c-p2';sub.textContent=people.p2+' deve a '+people.p1;}
+  else{bal.textContent=fmt(-diff);bal.className='value c-p1';sub.textContent=people.p1+' deve a '+people.p2;}
+}
+
+function renderBudgets(){
+  const me=monthExpenses(ym), box=$('#budgetList');
+  const withBudget=categories.filter(c=>c.budget>0);
+  if(!withBudget.length){box.innerHTML='<div class="empty">Sem orçamentos definidos.<br><span class="muted">Define limites em Definições → Categorias.</span></div>';return;}
+  box.innerHTML=withBudget.map(c=>{
+    const spent=me.filter(e=>e.category===c.name).reduce((a,e)=>a+e.amount,0);
+    const pct=Math.min(100,spent/c.budget*100);
+    const cls=spent>c.budget?'over':(pct>80?'warn':'');
+    return `<div class="budget-item"><div class="row"><span>${c.name}${spent>c.budget?' ⚠️':''}</span><span class="muted">${fmt(spent)} / ${fmt(c.budget)}</span></div><div class="bar"><div class="fill ${cls}" style="width:${pct}%;background:${cls?'':c.color}"></div></div></div>`;
+  }).join('');
+}
+
+function renderRecent(){
+  const me=monthExpenses(ym).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  $('#recentList').innerHTML=me.length?me.map(e=>
+    `<div class="list-item"><div><strong>${e.desc}</strong> <span class="tag cat">${e.category}</span> <span class="tag ${e.payer}">${people[e.payer]}</span><div class="muted">${fmtDate(e.date)}</div></div><div style="font-weight:700">${fmt(e.amount)}</div></div>`
+  ).join(''):'<div class="empty">Sem despesas neste mês.</div>';
+}
+
+function renderChartCat(){
+  const me=monthExpenses(ym), byCat={};
+  me.forEach(e=>byCat[e.category]=(byCat[e.category]||0)+e.amount);
+  const labels=Object.keys(byCat), data=labels.map(l=>byCat[l]);
+  if(charts.cat)charts.cat.destroy();
+  charts.cat=new Chart($('#chartCat'),{type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:labels.map(catColor),borderWidth:0}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8b97a5',boxWidth:12,padding:10}},
+      tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.parsed)}}}}});
+}
+
+function renderExpenses(){
+  const q=$('#fltSearch').value.toLowerCase(), fc=$('#fltCat').value, fp=$('#fltPayer').value;
+  let me=monthExpenses(ym).sort((a,b)=>b.date.localeCompare(a.date));
+  if(q)me=me.filter(e=>e.desc.toLowerCase().includes(q));
+  if(fc)me=me.filter(e=>e.category===fc);
+  if(fp)me=me.filter(e=>e.payer===fp);
+  $('#expTable').innerHTML=me.map(e=>
+    `<tr><td>${fmtDate(e.date)}</td><td>${e.desc}${e.recurringId?' 🔁':''}</td><td><span class="tag cat">${e.category}</span></td><td><span class="tag ${e.payer}">${people[e.payer]}</span></td><td class="num">${fmt(e.amount)}</td><td class="actions"><button data-edit="${e.id}" title="Editar">✏️</button><button data-del="${e.id}" title="Apagar">🗑️</button></td></tr>`
+  ).join('');
+  $('#expEmpty').style.display=me.length?'none':'block';
+}
+
+function renderRecurring(){
+  $('#recList').innerHTML=recurring.length?recurring.map(r=>
+    `<div class="list-item"><div><strong>${r.name}</strong> <span class="tag cat">${r.category}</span> <span class="tag ${r.payer}">${people[r.payer]}</span><div class="muted">Dia ${r.day} de cada mês</div></div><div style="display:flex;align-items:center;gap:10px"><span style="font-weight:700">${fmt(r.amount)}</span><span class="actions"><button data-rdel="${r.id}" title="Apagar">🗑️</button></span></div></div>`
+  ).join(''):'<div class="empty">Sem despesas recorrentes.</div>';
+}
+
+function renderStats(){
+  const curYear=ym.slice(0,4);
+  // média mensal últimos 6 meses
+  let sum6=0,n6=0;
+  for(let i=0;i<6;i++){const m=shiftYm(ym,-i);const t=monthExpenses(m).reduce((a,e)=>a+e.amount,0);if(t>0){sum6+=t;n6++;}}
+  $('#stAvg').textContent=fmt(n6?sum6/n6:0);
+  const yearTotal=expenses.filter(e=>e.date.slice(0,4)===curYear).reduce((a,e)=>a+e.amount,0);
+  $('#stYear').textContent=fmt(yearTotal);
+  const me=monthExpenses(ym);
+  const max=me.length?me.reduce((a,e)=>e.amount>a.amount?e:a):null;
+  $('#stMax').textContent=max?fmt(max.amount):'—';
+  $('#stMaxSub').textContent=max?max.desc:'';
+  $('#stCount').textContent=expenses.length;
+  // evolução 12 meses (barras empilhadas por pessoa)
+  const labels=[],d1=[],d2=[];
+  for(let i=11;i>=0;i--){const m=shiftYm(ym,-i);const ms=monthExpenses(m);
+    labels.push(MESES_S[+m.split('-')[1]-1]+' '+m.slice(2,4));
+    d1.push(ms.filter(e=>e.payer==='p1').reduce((a,e)=>a+e.amount,0));
+    d2.push(ms.filter(e=>e.payer==='p2').reduce((a,e)=>a+e.amount,0));}
+  if(charts.evo)charts.evo.destroy();
+  charts.evo=new Chart($('#chartEvo'),{type:'bar',
+    data:{labels,datasets:[
+      {label:people.p1,data:d1,backgroundColor:'#60a5fa',borderRadius:4},
+      {label:people.p2,data:d2,backgroundColor:'#f472b6',borderRadius:4}]},
+    options:{maintainAspectRatio:false,
+      scales:{x:{stacked:true,ticks:{color:'#8b97a5'},grid:{display:false}},
+              y:{stacked:true,ticks:{color:'#8b97a5',callback:v=>'€'+v},grid:{color:'#242c37'}}},
+      plugins:{legend:{labels:{color:'#e6edf3'}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y)}}}}});
+  // top categorias do ano
+  const byCat={};
+  expenses.filter(e=>e.date.slice(0,4)===curYear).forEach(e=>byCat[e.category]=(byCat[e.category]||0)+e.amount);
+  const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  $('#topCats').innerHTML=top.length?top.map(([c,v],i)=>
+    `<div class="list-item"><div><span style="color:${catColor(c)}">●</span> ${c} <span class="muted">${yearTotal?(v/yearTotal*100).toFixed(1):0}%</span></div><div class="value">${fmt(v)}</div></div>`
+  ).join(''):'<div class="empty">Sem dados este ano.</div>';
+}
+
+function renderSettings(){
+  $('#setP1').value=people.p1; $('#setP2').value=people.p2;
+  $('#catList').innerHTML=categories.map((c,i)=>
+    `<div class="settings-row"><span style="color:${c.color};font-size:1.1rem">●</span><input type="text" value="${c.name}" data-cname="${i}"><input type="number" value="${c.budget||''}" placeholder="Sem limite" step="0.01" min="0" data-cbudget="${i}" style="max-width:150px"><button class="btn ghost" data-cdel="${i}" style="padding:8px 12px">🗑</button></div>`
+  ).join('');
+}
+
+function fillSelects(){
+  const catOpts=categories.map(c=>`<option>${c.name}</option>`).join('');
+  $('#fCat').innerHTML=catOpts; $('#rCat').innerHTML=catOpts;
+  $('#fltCat').innerHTML='<option value="">Todas as categorias</option>'+catOpts;
+  const pOpts=`<option value="p1">${people.p1}</option><option value="p2">${people.p2}</option>`;
+  $('#fPayer').innerHTML=pOpts; $('#rPayer').innerHTML=pOpts;
+  $('#fltPayer').innerHTML='<option value="">Ambos</option>'+pOpts;
+}
+
+/* ---------- Eventos ---------- */
+function bind(){
+  $$('nav.tabs button').forEach(b=>b.onclick=()=>{
+    $$('nav.tabs button').forEach(x=>x.classList.remove('active'));
+    $$('section.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); $('#tab-'+b.dataset.tab).classList.add('active');
+    render();});
+  $('#prevM').onclick=()=>{ym=shiftYm(ym,-1);render();};
+  $('#nextM').onclick=()=>{ym=shiftYm(ym,1);render();};
+
+  $('#expForm').onsubmit=async e=>{e.preventDefault();
+    const exp={date:$('#fDate').value,desc:$('#fDesc').value.trim(),amount:parseFloat($('#fAmount').value),category:$('#fCat').value,payer:$('#fPayer').value};
+    if(editId!==null){exp.id=editId;const old=expenses.find(x=>x.id===editId);if(old&&old.recurringId)exp.recurringId=old.recurringId;
+      await put('expenses',exp);expenses=expenses.map(x=>x.id===editId?exp:x);editId=null;
+      $('#formTitle').textContent='Nova despesa';$('#fSubmit').textContent='Adicionar';toast('Despesa atualizada ✓');}
+    else{exp.id=await put('expenses',exp);expenses.push(exp);toast('Despesa adicionada ✓');}
+    e.target.reset();$('#fDate').value=new Date().toISOString().slice(0,10);
+    ym=exp.date.slice(0,7);render();};
+
+  $('#expTable').onclick=async e=>{
+    const ed=e.target.dataset.edit, dl=e.target.dataset.del;
+    if(ed){const x=expenses.find(v=>v.id===+ed);if(!x)return;
+      editId=x.id;$('#fDate').value=x.date;$('#fDesc').value=x.desc;$('#fAmount').value=x.amount;$('#fCat').value=x.category;$('#fPayer').value=x.payer;
+      $('#formTitle').textContent='Editar despesa';$('#fSubmit').textContent='Guardar';window.scrollTo({top:0,behavior:'smooth'});}
+    if(dl&&confirm('Apagar esta despesa?')){await del('expenses',+dl);expenses=expenses.filter(v=>v.id!==+dl);render();toast('Despesa apagada');}};
+
+  ['fltSearch','fltCat','fltPayer'].forEach(id=>$('#'+id).oninput=renderExpenses);
+
+  $('#recForm').onsubmit=async e=>{e.preventDefault();
+    const r={name:$('#rName').value.trim(),amount:parseFloat($('#rAmount').value),category:$('#rCat').value,payer:$('#rPayer').value,day:+$('#rDay').value};
+    r.id=await put('recurring',r);recurring.push(r);
+    await autoLaunchRecurring();e.target.reset();$('#rDay').value=1;render();toast('Recorrente adicionada ✓');};
+
+  $('#recList').onclick=async e=>{const id=e.target.dataset.rdel;
+    if(id&&confirm('Apagar esta recorrente? (despesas já lançadas mantêm-se)')){
+      await del('recurring',+id);recurring=recurring.filter(r=>r.id!==+id);render();toast('Recorrente apagada');}};
+
+  $('#savePeople').onclick=async()=>{
+    people={p1:$('#setP1').value.trim()||'Pessoa 1',p2:$('#setP2').value.trim()||'Pessoa 2'};
+    await put('meta',{key:'people',value:people});fillSelects();render();toast('Nomes guardados ✓');};
+
+  $('#addCat').onclick=async()=>{
+    const name=$('#newCatName').value.trim();if(!name)return;
+    if(categories.some(c=>c.name.toLowerCase()===name.toLowerCase())){toast('Categoria já existe');return;}
+    categories.push({name,budget:parseFloat($('#newCatBudget').value)||0,color:PALETTE[categories.length%PALETTE.length]});
+    await put('meta',{key:'categories',value:categories});
+    $('#newCatName').value='';$('#newCatBudget').value='';fillSelects();render();toast('Categoria adicionada ✓');};
+
+  $('#catList').onchange=async e=>{
+    const ni=e.target.dataset.cname, bi=e.target.dataset.cbudget;
+    if(ni!==undefined){const old=categories[+ni].name,nv=e.target.value.trim();
+      if(nv&&nv!==old){categories[+ni].name=nv;
+        for(const x of expenses.filter(x=>x.category===old)){x.category=nv;await put('expenses',x);}
+        for(const r of recurring.filter(r=>r.category===old)){r.category=nv;await put('recurring',r);}}}
+    if(bi!==undefined)categories[+bi].budget=parseFloat(e.target.value)||0;
+    await put('meta',{key:'categories',value:categories});fillSelects();render();};
+
+  $('#catList').onclick=async e=>{const i=e.target.dataset.cdel;
+    if(i!==undefined&&confirm('Apagar a categoria "'+categories[+i].name+'"? As despesas existentes mantêm o nome.')){
+      categories.splice(+i,1);await put('meta',{key:'categories',value:categories});fillSelects();render();}};
+
+  $('#exportBtn').onclick=()=>{
+    const data=JSON.stringify({version:1,exported:new Date().toISOString(),people,categories,expenses,recurring},null,2);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+    a.download='despesas-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Backup exportado ✓');};
+
+  $('#importBtn').onclick=()=>$('#importFile').click();
+  $('#importFile').onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{const data=JSON.parse(await f.text());
+      if(!data.expenses||!data.categories)throw 0;
+      if(!confirm('Importar substitui TODOS os dados atuais. Continuar?'))return;
+      await clearStore('expenses');await clearStore('recurring');
+      for(const x of data.expenses)await put('expenses',x);
+      for(const r of data.recurring||[])await put('recurring',r);
+      people=data.people||people;categories=data.categories;
+      await put('meta',{key:'people',value:people});await put('meta',{key:'categories',value:categories});
+      expenses=await getAll('expenses');recurring=await getAll('recurring');
+      fillSelects();render();toast('Dados importados ✓');}
+    catch(err){toast('⚠️ Ficheiro inválido');}
+    e.target.value='';};
+
+  $('#resetBtn').onclick=async()=>{
+    if(!confirm('Apagar TODOS os dados? Esta ação é irreversível.'))return;
+    if(!confirm('Tens a certeza absoluta?'))return;
+    await clearStore('expenses');await clearStore('recurring');
+    expenses=[];recurring=[];render();toast('Dados apagados');};
+}
+
+/* ---------- Init ---------- */
+(async function init(){
+  db=await openDB();
+  const metas=await getAll('meta');
+  const mc=metas.find(m=>m.key==='categories'), mp=metas.find(m=>m.key==='people');
+  if(mc)categories=mc.value;else{categories=DEFAULT_CATS;await put('meta',{key:'categories',value:categories});}
+  if(mp)people=mp.value;else await put('meta',{key:'people',value:people});
+  expenses=await getAll('expenses');
+  recurring=await getAll('recurring');
+  await autoLaunchRecurring();
+  $('#fDate').value=new Date().toISOString().slice(0,10);
+  fillSelects();bind();render();
+})();
+</script>
+</body>
+</html>
