@@ -96,6 +96,42 @@ button.btn:active,nav.tabs button:active{transform:scale(.97)}
 .insight{font-size:.8rem;margin-top:4px;font-weight:500}
 .insight.up{color:var(--red)} .insight.down{color:var(--green)}
 #paidBadge{color:var(--green);font-size:.85rem;margin-left:4px}
+/* Lista de despesas em cartões (mobile) */
+#expCards{display:none}
+.exp-card{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--border)}
+.exp-card:last-child{border-bottom:none}
+.exp-card .amt{font-weight:700;white-space:nowrap;font-size:.95rem}
+.exp-card .meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+/* ===== Responsivo / Mobile ===== */
+@media(max-width:680px){
+  .container{padding:14px 10px 60px}
+  header{gap:8px;margin-bottom:12px}
+  header h1{font-size:1.15rem}
+  header h1 img{width:30px !important;height:30px !important}
+  header>div:last-child{width:100%}
+  .month-nav{flex:1;justify-content:space-between}
+  .month-nav button{font-size:1.3rem;padding:6px 16px}
+  .month-nav span#monthLabel{min-width:0}
+  nav.tabs,.type-seg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  nav.tabs::-webkit-scrollbar,.type-seg::-webkit-scrollbar{display:none}
+  nav.tabs button,.type-seg button{white-space:nowrap;flex-shrink:0}
+  .cards,.cards.small{grid-template-columns:1fr 1fr;gap:9px}
+  .card{padding:13px}
+  .card .value{font-size:1.18rem}
+  .card .value.sm{font-size:1.02rem}
+  form.inline{grid-template-columns:1fr 1fr}
+  form.inline button.btn{grid-column:1/-1;padding:13px;min-height:46px}
+  input,select,.vsel-btn{padding:12px 10px;font-size:16px;min-height:44px}
+  .filters input,.filters select{flex:1 1 calc(50% - 10px);min-width:0}
+  #tab-despesas table{display:none}
+  #expCards{display:block}
+  .exp-card .actions button{font-size:1.2rem;padding:8px 10px}
+  .actions button{font-size:1.1rem;padding:8px}
+  .chart-box{height:230px !important}
+  .settings-row input{min-width:90px}
+  #yearTable{font-size:.8rem}
+  .profile-card{padding:22px 26px;min-width:130px}
+}
 #toast.show{opacity:1}
 .stat-list .list-item .value{font-weight:700}
 /* Login */
@@ -211,6 +247,7 @@ button.btn:active,nav.tabs button:active{transform:scale(.97)}
         <thead><tr><th>Data</th><th>Despesa</th><th>Categoria</th><th>Pagou</th><th style="text-align:right">Valor</th><th></th></tr></thead>
         <tbody id="expTable"></tbody>
       </table>
+      <div id="expCards"></div>
       <div class="empty" id="expEmpty" style="display:none">Sem despesas neste mês.</div>
     </div>
   </section>
@@ -495,7 +532,7 @@ function renderChartCat(){
   if(charts.cat)charts.cat.destroy();
   charts.cat=new Chart($('#chartCat'),{type:'doughnut',
     data:{labels,datasets:[{data,backgroundColor:labels.map(catColor),borderWidth:0}]},
-    options:{maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8b97a5',boxWidth:12,padding:10}},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:window.innerWidth<700?'bottom':'right',labels:{color:'#8b97a5',boxWidth:12,padding:10}},
       tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.parsed)}}}}});
 }
 
@@ -509,6 +546,10 @@ function renderExpenses(){
   $('#expTable').innerHTML=me.map(e=>{
     const v=vendorById(e.vendorId);
     return `<tr><td>${fmtDate(e.date)}</td><td><span class="vendor-cell">${v?vendorLogo(v,22):''}<span>${esc(expLabel(e))}${e.recurringId?' 🔁':''}${e.shared===false?' <span class="tag ind">ind.</span>':''}</span></span></td><td><span class="tag cat">${catEmoji(e.category)} ${esc(e.category)}</span></td><td><span class="tag ${e.payer}">${esc(people[e.payer])}</span></td><td class="num">${fmt(e.amount)}</td><td class="actions"><button data-edit="${e.id}" title="Editar">✏️</button><button data-del="${e.id}" title="Apagar">🗑️</button></td></tr>`;
+  }).join('');
+  $('#expCards').innerHTML=me.map(e=>{
+    const v=vendorById(e.vendorId);
+    return `<div class="exp-card"><div class="vendor-cell" style="min-width:0">${v?vendorLogo(v,30):''}<div style="min-width:0"><strong>${esc(expLabel(e))}${e.recurringId?' 🔁':''}</strong><div class="meta"><span class="muted">${fmtDate(e.date)}</span> <span class="tag cat">${catEmoji(e.category)} ${esc(e.category)}</span> <span class="tag ${e.payer}">${esc(people[e.payer])}</span>${e.shared===false?' <span class="tag ind">ind.</span>':''}</div></div></div><div style="display:flex;align-items:center;gap:2px"><span class="amt">${fmt(e.amount)}</span><span class="actions"><button data-edit="${e.id}">✏️</button><button data-del="${e.id}">🗑️</button></span></div></div>`;
   }).join('');
   $('#expEmpty').style.display=me.length?'none':'block';
 }
@@ -551,7 +592,7 @@ function renderStats(){
   if(charts.type)charts.type.destroy();
   charts.type=new Chart($('#chartType'),{type:'doughnut',
     data:{labels:TYPES.map(t=>t.emoji+' '+t.name),datasets:[{data:tdata,backgroundColor:TYPES.map(t=>TYPE_COLORS[t.id]),borderWidth:0}]},
-    options:{maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8b97a5',boxWidth:12,padding:10}},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:window.innerWidth<700?'bottom':'right',labels:{color:'#8b97a5',boxWidth:12,padding:10}},
       tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.parsed)}}}}});
   const byCat={};
   expenses.filter(e=>e.date.slice(0,4)===curYear).forEach(e=>byCat[e.category]=(byCat[e.category]||0)+e.amount);
@@ -701,7 +742,7 @@ function bind(){
     if(currentUser)$('#fPayer').value=currentUser;
     ym=exp.date.slice(0,7);render();};
 
-  $('#expTable').onclick=async e=>{
+  const expClick=async e=>{
     const ed=e.target.dataset.edit, dl=e.target.dataset.del;
     if(ed){const x=expenses.find(v=>v.id===+ed);if(!x)return;
       editId=x.id;
@@ -712,8 +753,12 @@ function bind(){
       $('#fDate').value=x.date;$('#fDesc').value=x.desc||'';$('#fAmount').value=x.amount;$('#fCat').value=x.category;$('#fPayer').value=x.payer;
       $('#formTitle').textContent='Editar despesa';$('#fSubmit').textContent='Guardar';window.scrollTo({top:0,behavior:'smooth'});}
     if(dl&&confirm('Apagar esta despesa?')){await del('expenses',+dl);expenses=expenses.filter(v=>v.id!==+dl);render();toast('Despesa apagada');}};
+  $('#expTable').onclick=expClick;
+  $('#expCards').onclick=expClick;
 
   ['fltSearch','fltType','fltCat','fltPayer'].forEach(id=>$('#'+id).oninput=renderExpenses);
+
+  let _rt;window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,250);});
 
   $('#recForm').onsubmit=async e=>{e.preventDefault();
     if(!$('#rCat').value){toast('⚠️ Cria primeiro uma categoria deste tipo');return;}
