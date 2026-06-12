@@ -115,20 +115,48 @@ button.btn:active,nav.tabs button:active{transform:scale(.97)}
 /* Relatório / impressão */
 #printReport{display:none}
 @media print{
+  @page{margin:14mm 12mm}
   body{background:#fff !important}
   .container,#toast,#lockOverlay,#loginOverlay{display:none !important}
-  #printReport{display:block !important;color:#111;font-family:Georgia,'Times New Roman',serif;padding:10px}
-  #printReport h1{font-size:1.6rem;margin-bottom:2px}
-  #printReport .sub{color:#666;margin-bottom:18px}
-  #printReport h2{font-size:1.05rem;margin:18px 0 8px;border-bottom:2px solid #111;padding-bottom:4px}
-  #printReport table{width:100%;border-collapse:collapse;font-size:.85rem}
-  #printReport th{text-align:left;border-bottom:1px solid #999;padding:5px 6px;font-size:.75rem;text-transform:uppercase;color:#555}
-  #printReport td{padding:5px 6px;border-bottom:1px solid #e5e5e5}
-  #printReport td.num,#printReport th.num{text-align:right}
-  #printReport .totals{display:flex;gap:24px;flex-wrap:wrap;margin:10px 0}
-  #printReport .totals div{font-size:.9rem}
-  #printReport .totals b{display:block;font-size:1.2rem}
-  #printReport .foot{margin-top:24px;color:#888;font-size:.75rem;text-align:center}
+  #printReport{display:block !important;color:#1a1d29;font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rp-head{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(120deg,#6366f1,#a855f7);
+    border-radius:14px;padding:20px 24px;color:#fff;margin-bottom:6px}
+  .rp-brand{display:flex;align-items:center;gap:13px}
+  .rp-logo{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;
+    font-size:1.7rem;font-weight:900;color:#fff}
+  .rp-title{font-size:1.45rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+  .rp-tag{font-size:.78rem;opacity:.85;text-transform:uppercase;letter-spacing:.12em}
+  .rp-month{text-align:right}
+  .rp-month b{display:block;font-size:1.5rem;font-weight:800}
+  .rp-month span{font-size:.8rem;opacity:.85}
+  .rp-meta{display:flex;justify-content:space-between;color:#8a8fa3;font-size:.74rem;margin:8px 2px 16px}
+  .rp-kpis{display:flex;gap:10px;margin-bottom:18px}
+  .rp-kpi{flex:1;border:1px solid #e8e9f0;border-radius:12px;padding:12px 14px;background:#fafafe}
+  .rp-kpi .l{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#8a8fa3;margin-bottom:4px}
+  .rp-kpi .v{font-size:1.25rem;font-weight:800}
+  .rp-kpi.k1 .v{color:#1a1d29}.rp-kpi.k2 .v{color:#2563eb}.rp-kpi.k3 .v{color:#db2777}
+  .rp-settle{border-radius:12px;padding:12px 16px;font-size:.9rem;font-weight:600;margin-bottom:20px;background:#f1f5ff;border:1px solid #d7e0f7;color:#3b4a6b}
+  .rp-settle.paid{background:#ecfdf5;border-color:#bbe7d3;color:#0e6b4a}
+  #printReport h2{font-size:.95rem;font-weight:800;margin:20px 0 10px;color:#1a1d29;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:8px}
+  #printReport h2::after{content:'';flex:1;height:1px;background:#e8e9f0}
+  .rp-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:.84rem}
+  .rp-bar-row .n{width:170px;flex-shrink:0}
+  .rp-bar-row .track{flex:1;height:14px;background:#f0f1f6;border-radius:7px;overflow:hidden}
+  .rp-bar-row .fill{height:100%;border-radius:7px}
+  .rp-bar-row .val{width:110px;text-align:right;font-weight:700;flex-shrink:0}
+  .rp-bar-row .pct{width:48px;text-align:right;color:#8a8fa3;flex-shrink:0;font-size:.78rem}
+  #printReport table{width:100%;border-collapse:collapse;font-size:.8rem}
+  #printReport th{text-align:left;padding:7px 8px;font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:#8a8fa3;border-bottom:2px solid #e8e9f0}
+  #printReport td{padding:6px 8px;border-bottom:1px solid #f0f1f6}
+  #printReport tr:nth-child(even) td{background:#fafafe}
+  #printReport td.num,#printReport th.num{text-align:right;font-variant-numeric:tabular-nums}
+  #printReport td .ind-mark{font-size:.68rem;color:#b45309;background:#fef3c7;border-radius:8px;padding:1px 7px;margin-left:5px}
+  .rp-insights{display:flex;gap:10px;margin-top:18px}
+  .rp-insight{flex:1;border-left:3px solid #6366f1;background:#fafafe;border-radius:0 10px 10px 0;padding:10px 14px;font-size:.8rem;color:#3d4154}
+  .rp-insight b{display:block;font-size:.95rem;color:#1a1d29;margin-bottom:2px}
+  .rp-foot{margin-top:26px;padding-top:10px;border-top:1px solid #e8e9f0;display:flex;justify-content:space-between;color:#a0a4b8;font-size:.7rem}
 }
 /* ===== Responsivo / Mobile ===== */
 @media(max-width:680px){
@@ -387,6 +415,7 @@ button.btn:active,nav.tabs button:active{transform:scale(.97)}
 <div id="printReport"></div>
 <script>
 'use strict';
+const APP_VERSION='2.0';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const fmt=v=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v||0);
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -820,26 +849,61 @@ function buildReport(){
   const diff=sh.filter(e=>e.payer==='p1').reduce((a,e)=>a+e.amount,0)-shT/2;
   const st=settlements[ym];
   const byCat={};me.forEach(e=>byCat[e.category]=(byCat[e.category]||0)+e.amount);
-  const acerto=st?`Mês fechado (PAGO) a ${fmtDate(st.date)}${st.amount>0.005?` — ${people[st.from]} pagou ${fmt(st.amount)} a ${people[st.to]}`:''}`
-    :(Math.abs(diff)<0.005?'Equilibrado':`${people[diff>0?'p2':'p1']} deve ${fmt(Math.abs(diff))} a ${people[diff>0?'p1':'p2']}`);
+  const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const maxCat=cats.length?cats[0][1]:1;
+  const acerto=st
+    ?`✓ Mês fechado (PAGO) a ${fmtDate(st.date)}${st.amount>0.005?` — ${esc(people[st.from])} pagou ${fmt(st.amount)} a ${esc(people[st.to])}`:''}`
+    :(Math.abs(diff)<0.005?'Contas equilibradas — nada a acertar':`Acerto pendente: ${esc(people[diff>0?'p2':'p1'])} deve ${fmt(Math.abs(diff))} a ${esc(people[diff>0?'p1':'p2'])}`);
+  // insights
+  let sum6=0,n6=0;
+  for(let i=1;i<=6;i++){const t=monthExpenses(shiftYm(ym,-i)).reduce((a,e)=>a+e.amount,0);if(t>0){sum6+=t;n6++;}}
+  const avg=n6?sum6/n6:0;
+  const dAvg=avg>0?(total-avg)/avg*100:null;
+  const maxExp=me.length?me.reduce((a,e)=>e.amount>a.amount?e:a):null;
+  const fuel=me.filter(e=>e.ppl>0);
+  const fuelL=fuel.reduce((a,e)=>a+e.amount/e.ppl,0);
+  const insights=[];
+  if(dAvg!==null)insights.push(`<div class="rp-insight"><b>${dAvg>0?'▲':'▼'} ${Math.abs(dAvg).toFixed(0)}% vs média</b>média dos últimos 6 meses: ${fmt(avg)}</div>`);
+  if(maxExp)insights.push(`<div class="rp-insight"><b>${fmt(maxExp.amount)}</b>maior despesa: ${esc(expLabel(maxExp))} (${fmtDate(maxExp.date)})</div>`);
+  if(fuelL>0)insights.push(`<div class="rp-insight"><b>⛽ ${fuelL.toFixed(1)} L</b>combustível a ${fmt(fuel.reduce((a,e)=>a+e.amount,0)/fuelL)}/L em média</div>`);
+  const typeBars=TYPES.map(t=>{
+    const v=me.filter(e=>(e.type||catType(e.category))===t.id).reduce((a,e)=>a+e.amount,0);
+    if(!v)return '';
+    return `<div class="rp-bar-row"><span class="n">${t.emoji} ${t.name}</span><span class="track"><span class="fill" style="width:${(v/total*100).toFixed(1)}%;background:${TYPE_COLORS[t.id]}"></span></span><span class="val">${fmt(v)}</span><span class="pct">${(v/total*100).toFixed(0)}%</span></div>`;
+  }).join('');
+  const catBars=cats.slice(0,10).map(([c,v])=>
+    `<div class="rp-bar-row"><span class="n">${catEmoji(c)} ${esc(c)}</span><span class="track"><span class="fill" style="width:${(v/maxCat*100).toFixed(1)}%;background:${catColor(c)}"></span></span><span class="val">${fmt(v)}</span><span class="pct">${total?(v/total*100).toFixed(0):0}%</span></div>`
+  ).join('');
   $('#printReport').innerHTML=`
-    <h1>Splitz — Relatório Mensal</h1>
-    <div class="sub">${ymLabel(ym)} · ${people.p1} &amp; ${people.p2}</div>
-    <div class="totals">
-      <div>Total do mês<b>${fmt(total)}</b></div>
-      <div>${esc(people.p1)} pagou<b>${fmt(t1)}</b></div>
-      <div>${esc(people.p2)} pagou<b>${fmt(total-t1)}</b></div>
-      <div>Acerto<b style="font-size:.95rem">${acerto}</b></div>
+    <div class="rp-head">
+      <div class="rp-brand"><div class="rp-logo">S</div><div><div class="rp-title">Splitz</div><div class="rp-tag">Relatório Mensal</div></div></div>
+      <div class="rp-month"><b>${ymLabel(ym)}</b><span>${esc(people.p1)} &amp; ${esc(people.p2)}</span></div>
     </div>
-    <h2>Por tipo</h2>
-    <table>${TYPES.map(t=>{const v=me.filter(e=>(e.type||catType(e.category))===t.id).reduce((a,e)=>a+e.amount,0);return v?`<tr><td>${t.emoji} ${t.name}</td><td class="num">${fmt(v)}</td></tr>`:'';}).join('')}</table>
-    <h2>Por categoria</h2>
-    <table>${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<tr><td>${esc(c)}</td><td class="num">${fmt(v)}</td><td class="num">${total?(v/total*100).toFixed(1):0}%</td></tr>`).join('')}</table>
-    <h2>Todas as despesas (${me.length})</h2>
-    <table><tr><th>Data</th><th>Despesa</th><th>Categoria</th><th>Pagou</th><th class="num">Valor</th></tr>
-    ${me.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${esc(expLabel(e))}${e.shared===false?' (individual)':''}</td><td>${esc(e.category)}</td><td>${esc(people[e.payer])}</td><td class="num">${fmt(e.amount)}</td></tr>`).join('')}</table>
-    <div class="foot">Gerado por Splitz · splitz.pt · ${new Date().toLocaleDateString('pt-PT')}</div>`;
+    <div class="rp-meta"><span>Gerado a ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}</span><span>splitz.pt · v${APP_VERSION}</span></div>
+    <div class="rp-kpis">
+      <div class="rp-kpi k1"><div class="l">Total do mês</div><div class="v">${fmt(total)}</div></div>
+      <div class="rp-kpi k2"><div class="l">${esc(people.p1)} pagou</div><div class="v">${fmt(t1)}</div></div>
+      <div class="rp-kpi k3"><div class="l">${esc(people.p2)} pagou</div><div class="v">${fmt(total-t1)}</div></div>
+      <div class="rp-kpi"><div class="l">Movimentos</div><div class="v">${me.length}</div></div>
+    </div>
+    <div class="rp-settle ${st?'paid':''}">${acerto}</div>
+    <h2>Distribuição por tipo</h2>${typeBars||'<p style="color:#8a8fa3;font-size:.85rem">Sem despesas neste mês.</p>'}
+    <h2>Top categorias</h2>${catBars||'<p style="color:#8a8fa3;font-size:.85rem">—</p>'}
+    ${insights.length?`<div class="rp-insights">${insights.join('')}</div>`:''}
+    <h2>Movimentos do mês</h2>
+    <table><tr><th>Dia</th><th>Despesa</th><th>Loja / Fornecedor</th><th>Categoria</th><th>Pagou</th><th class="num">Valor</th></tr>
+    ${me.map(e=>{const v=vendorById(e.vendorId);
+      return `<tr><td>${e.date.slice(8)}</td><td>${esc(expLabel(e))}${e.shared===false?'<span class="ind-mark">individual</span>':''}</td><td>${v?esc(v.name):'—'}</td><td>${esc(e.category)}</td><td>${esc(people[e.payer])}</td><td class="num">${fmt(e.amount)}</td></tr>`;}).join('')}
+    <tr><td colspan="5" style="font-weight:800;border-top:2px solid #e8e9f0">Total</td><td class="num" style="font-weight:800;border-top:2px solid #e8e9f0">${fmt(total)}</td></tr></table>
+    <div class="rp-foot"><span>Splitz — contas a meias, sem dramas</span><span>splitz.pt · versão ${APP_VERSION}</span></div>`;
+  const[ry,rm]=ym.split('-');
+  const fname=`Splitz_Relatorio_${MESES[+rm-1]}-${ry}_v${APP_VERSION}`;
+  const oldTitle=document.title;
+  document.title=fname;
+  const restore=()=>{document.title=oldTitle;window.onafterprint=null;};
+  window.onafterprint=restore;
   window.print();
+  setTimeout(restore,2000);
 }
 
 function renderSettings(){
