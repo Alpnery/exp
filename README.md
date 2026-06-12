@@ -12,7 +12,6 @@ Abrir o `index.html` no browser. Mais nada.
 
 - **Registo por pessoa** — quem pagou o quê, com acerto de contas automático (50/50)
 - **Categorias com orçamentos mensais** — barras de progresso e alertas ao ultrapassar
-- **Despesas recorrentes** — renda, subscrições, etc. lançadas automaticamente todos os meses
 - **Gráficos e estatísticas** — distribuição por categoria, evolução de 12 meses por pessoa, top categorias do ano, médias
 - **Navegação por mês**, pesquisa e filtros
 - **Exportar/importar JSON** — backup ou sincronização manual entre computadores
