@@ -408,6 +408,7 @@ button.btn:active,nav.tabs button:active{transform:scale(.97)}
     <div class="card">
       <h3>Dados</h3>
       <p class="muted">Os dados ficam guardados neste browser (IndexedDB). Usa exportar/importar para backup ou para sincronizar com outro computador.</p>
+      <div id="storageStatus" style="margin:10px 0;font-size:.82rem;color:var(--muted)"></div>
       <div class="btn-row">
         <button class="btn" id="exportBtn">⬇ Exportar dados (JSON)</button>
         <button class="btn ghost" id="importBtn">⬆ Importar dados</button>
@@ -477,11 +478,27 @@ function openDB(){return new Promise((res,rej)=>{
 function tx(store,mode,fn){return new Promise((res,rej)=>{
   const t=db.transaction(store,mode), s=t.objectStore(store), out=fn(s);
   t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined);
-  t.onerror=()=>rej(t.error);});}
+  t.onerror=()=>rej(t.error);
+  t.onabort=()=>rej(new Error('IndexedDB transaction aborted'));});}
 const getAll=s=>new Promise((res,rej)=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
 const put=(s,o)=>tx(s,'readwrite',st=>st.put(o));
 const del=(s,id)=>tx(s,'readwrite',st=>st.delete(id));
 const clearStore=s=>tx(s,'readwrite',st=>st.clear());
+
+/* ---------- Backup local (localStorage) ---------- */
+function backupExpenses(){
+  try{localStorage.setItem('splitz_backup',JSON.stringify({ts:Date.now(),expenses}));}catch(e){}}
+async function restoreFromBackup(){
+  try{
+    const raw=localStorage.getItem('splitz_backup');
+    if(!raw)return false;
+    const {expenses:bk}=JSON.parse(raw);
+    if(!bk||!bk.length)return false;
+    for(const x of bk)await put('expenses',x);
+    expenses=bk.slice();
+    setTimeout(()=>toast('📦 Dados recuperados do backup local ✓'),800);
+    return true;
+  }catch(e){return false;}}
 
 /* ---------- Helpers ---------- */
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -970,6 +987,7 @@ function bind(){
       await put('expenses',exp);expenses=expenses.map(x=>x.id===editId?exp:x);editId=null;
       $('#formTitle').textContent='Nova despesa';$('#fSubmit').textContent='Adicionar';toast('Despesa atualizada ✓');}
     else{exp.id=await put('expenses',exp);expenses.push(exp);toast('Despesa adicionada ✓');}
+    backupExpenses();
     e.target.reset();$('#fDate').value=new Date().toISOString().slice(0,10);
     fVendorId=null;fShared=true;$('#fVendor')._refresh();$('#fShare')._refresh();
     fillFormCats('#fCat',fType);$('#fPpl').value='';updatePplVis();
@@ -988,7 +1006,7 @@ function bind(){
       $('#fPpl').value=x.ppl||'';updatePplVis();
       $('#formTitle').textContent='Editar despesa';$('#fSubmit').textContent='Guardar';window.scrollTo({top:0,behavior:'smooth'});}
     if(dl&&confirm('Apagar esta despesa?')){
-      await del('expenses',+dl);expenses=expenses.filter(v=>v.id!==+dl);render();toast('Despesa apagada');}};
+      await del('expenses',+dl);expenses=expenses.filter(v=>v.id!==+dl);backupExpenses();render();toast('Despesa apagada');}};
   $('#expTable').onclick=expClick;
   $('#expCards').onclick=expClick;
 
@@ -1085,7 +1103,7 @@ function bind(){
       await put('meta',{key:'people',value:people});await put('meta',{key:'categories',value:categories});
       expenses=await getAll('expenses');vendors=await getAll('vendors');
       expenses.forEach(x=>{if(!x.type)x.type=catType(x.category)||'outras';});
-      fillSelects();render();toast('Dados importados ✓');}
+      backupExpenses();fillSelects();render();toast('Dados importados ✓');}
     catch(err){toast('⚠️ Ficheiro inválido');}
     e.target.value='';};
 
@@ -1093,7 +1111,25 @@ function bind(){
     if(!confirm('Apagar TODOS os dados? Esta ação é irreversível.'))return;
     if(!confirm('Tens a certeza absoluta?'))return;
     await clearStore('expenses');await clearStore('recurring');
+    localStorage.removeItem('splitz_backup');
     expenses=[];render();toast('Dados apagados');};
+
+  // Estado do armazenamento
+  (async()=>{
+    const el=$('#storageStatus');if(!el)return;
+    let html='';
+    const bk=localStorage.getItem('splitz_backup');
+    if(bk){try{const {ts,expenses:bkExp}=JSON.parse(bk);
+      const d=new Date(ts);const ago=Math.round((Date.now()-ts)/60000);
+      const agoTxt=ago<60?ago+'min atrás':ago<1440?Math.round(ago/60)+'h atrás':Math.round(ago/1440)+'d atrás';
+      html+=`<span style="color:var(--green)">💾 Backup local: ${bkExp.length} despesas (${agoTxt})</span>`;
+    }catch(e){}}
+    if(navigator.storage&&navigator.storage.persisted){
+      const p=await navigator.storage.persisted();
+      html+=(html?' &nbsp;|&nbsp; ':'')+(p?'<span style="color:var(--green)">🔒 Armazenamento persistente</span>':'<span style="color:var(--amber)">⚠️ Armazenamento não persistente — exporta regularmente!</span>');
+    }
+    el.innerHTML=html;
+  })();
 }
 
 /* ---------- Init ---------- */
@@ -1119,6 +1155,8 @@ function bind(){
     vendors=DEFAULT_VENDORS.slice();
     await put('meta',{key:'vendorsSeeded',value:true});}
   expenses=await getAll('expenses');
+  // Recuperar do backup local se IndexedDB foi limpo pelo browser
+  if(!expenses.length&&metas.find(m=>m.key==='seeded')){await restoreFromBackup();}
   for(const e of expenses){if(!e.type){e.type=catType(e.category)||'outras';if(e.shared===undefined)e.shared=true;await put('expenses',e);}}
   if(!categories.some(c=>c.type==='tobias')){
     categories.push({name:'Comida',type:'tobias',budget:0,color:'#fb923c'},{name:'Veterinário',type:'tobias',budget:0,color:'#67e8f9'},{name:'Acessórios',type:'tobias',budget:0,color:'#a3e635'});

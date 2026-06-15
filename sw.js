@@ -1,4 +1,4 @@
-const CACHE = 'splitz-v2.0';
+const CACHE = 'splitz-v2.1';
 const CORE = ['./', 'logo.svg', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
