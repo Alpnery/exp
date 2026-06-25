@@ -1199,6 +1199,10 @@ function bind(){
   if(!categories.some(c=>c.name==='Combustível')){
     categories.push({name:'Combustível',type:'outras',budget:0,color:'#fb923c'});
     await put('meta',{key:'categories',value:categories});}
+    // Garantir que "água" existe nas categorias fixas
+    if(!categories.some(c=>c.name==='água'&&c.type==='fixas')){
+          categories.unshift({name:'água',type:'fixas',budget:0,color:'#60a5fa'});
+          await put('meta',{key:'categories',value:categories});}
   for(const[n,d] of [['Prio','prio.pt'],['Galp','galp.com'],['BP','bp.com'],['Repsol','repsol.pt'],['Cepsa','cepsa.com'],['Intermarché','intermarche.pt']]){
     if(!vendors.some(v=>v.type==='outras'&&v.name===n)){
       const v={type:'outras',name:n,domain:d};
