@@ -487,7 +487,12 @@ const clearStore=s=>tx(s,'readwrite',st=>st.clear());
 
 /* ---------- Backup local (localStorage) ---------- */
 function backupExpenses(){
-  try{localStorage.setItem('splitz_backup',JSON.stringify({ts:Date.now(),expenses}));}catch(e){}}
+  try{
+    localStorage.setItem('splitz_backup',JSON.stringify({ts:Date.now(),expenses}));
+    // Marca durável (sobrevive à evicção do IndexedDB) de que já existiram dados reais.
+    // Usada para impedir que o seed inicial sobrescreva dados do utilizador.
+    if(expenses.length)localStorage.setItem('splitz_has_data','1');
+  }catch(e){}}
 async function restoreFromBackup(){
   try{
     const raw=localStorage.getItem('splitz_backup');
@@ -983,11 +988,22 @@ function bind(){
     if(!$('#fCat').value){toast('⚠️ Cria primeiro uma categoria deste tipo');return;}
     const exp={date:$('#fDate').value,desc:$('#fDesc').value.trim(),amount:parseFloat($('#fAmount').value),category:$('#fCat').value,type:fType,vendorId:fVendorId,payer:$('#fPayer').value,shared:fShared};
     if($('#fCat').value==='Combustível'&&parseFloat($('#fPpl').value)>0)exp.ppl=parseFloat($('#fPpl').value);
-    if(editId!==null){exp.id=editId;
-      await put('expenses',exp);expenses=expenses.map(x=>x.id===editId?exp:x);editId=null;
-      $('#formTitle').textContent='Nova despesa';$('#fSubmit').textContent='Adicionar';toast('Despesa atualizada ✓');}
-    else{exp.id=await put('expenses',exp);expenses.push(exp);toast('Despesa adicionada ✓');}
-    backupExpenses();
+    const wasEditing=editId!==null;
+    try{
+      if(wasEditing){exp.id=editId;
+        await put('expenses',exp);editId=null;
+        $('#formTitle').textContent='Nova despesa';$('#fSubmit').textContent='Adicionar';}
+      else{exp.id=await put('expenses',exp);}
+      // Re-sincronizar a partir do IndexedDB: garante que o array em memória é exatamente
+      // o que ficou gravado em disco. Evita o caso "aparece na UI mas não foi persistido".
+      expenses=await getAll('expenses');
+      backupExpenses();
+      toast(wasEditing?'Despesa atualizada ✓':'Despesa adicionada ✓');
+    }catch(err){
+      console.error('Falha ao gravar despesa:',err);
+      toast('⚠️ Erro ao gravar — os dados NÃO foram guardados. Tenta de novo.');
+      return; // não limpar o formulário: o utilizador não perde o que escreveu
+    }
     e.target.reset();$('#fDate').value=new Date().toISOString().slice(0,10);
     fVendorId=null;fShared=true;$('#fVendor')._refresh();$('#fShare')._refresh();
     fillFormCats('#fCat',fType);$('#fPpl').value='';updatePplVis();
@@ -1006,7 +1022,11 @@ function bind(){
       $('#fPpl').value=x.ppl||'';updatePplVis();
       $('#formTitle').textContent='Editar despesa';$('#fSubmit').textContent='Guardar';window.scrollTo({top:0,behavior:'smooth'});}
     if(dl&&confirm('Apagar esta despesa?')){
-      await del('expenses',+dl);expenses=expenses.filter(v=>v.id!==+dl);backupExpenses();render();toast('Despesa apagada');}};
+      try{
+        await del('expenses',+dl);
+        expenses=await getAll('expenses'); // re-sincronizar com o disco
+        backupExpenses();render();toast('Despesa apagada');
+      }catch(err){console.error('Falha ao apagar:',err);toast('⚠️ Erro ao apagar — tenta de novo');}}};
   $('#expTable').onclick=expClick;
   $('#expCards').onclick=expClick;
 
@@ -1103,6 +1123,7 @@ function bind(){
       await put('meta',{key:'people',value:people});await put('meta',{key:'categories',value:categories});
       expenses=await getAll('expenses');vendors=await getAll('vendors');
       expenses.forEach(x=>{if(!x.type)x.type=catType(x.category)||'outras';});
+      editId=null;
       backupExpenses();fillSelects();render();toast('Dados importados ✓');}
     catch(err){toast('⚠️ Ficheiro inválido');}
     e.target.value='';};
@@ -1112,6 +1133,8 @@ function bind(){
     if(!confirm('Tens a certeza absoluta?'))return;
     await clearStore('expenses');await clearStore('recurring');
     localStorage.removeItem('splitz_backup');
+    localStorage.removeItem('splitz_has_data'); // reset coerente da flag durável
+    editId=null;
     expenses=[];render();toast('Dados apagados');};
 
   // Estado do armazenamento
@@ -1148,15 +1171,24 @@ function bind(){
   if(ms)settlements=ms.value;
   const mg=metas.find(m=>m.key==='goals');
   if(mg)goals=mg.value;
-  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+  // Pedir armazenamento persistente o mais cedo possível para reduzir a probabilidade
+  // de o browser evictar o IndexedDB (principal causa da perda de dados em PWAs iOS/Safari).
+  if(navigator.storage&&navigator.storage.persist){
+    try{const ok=await navigator.storage.persist();console.log('Armazenamento persistente:',ok);}catch(e){}}
   vendors=await getAll('vendors');
   if(!vendors.length&&!metas.find(m=>m.key==='vendorsSeeded')){
     for(const v of DEFAULT_VENDORS)v.id=await put('vendors',v);
     vendors=DEFAULT_VENDORS.slice();
     await put('meta',{key:'vendorsSeeded',value:true});}
   expenses=await getAll('expenses');
-  // Recuperar do backup local se IndexedDB foi limpo pelo browser
-  if(!expenses.length&&metas.find(m=>m.key==='seeded')){await restoreFromBackup();}
+  // Recuperar do backup local se o IndexedDB foi limpo/evictado pelo browser.
+  // CRÍTICO: tentar SEMPRE o backup quando não há despesas e já existiram dados antes
+  // (flag durável em localStorage), MESMO que o registo meta 'seeded' tenha desaparecido.
+  // A evicção total do IndexedDB apaga também o meta 'seeded', mas o localStorage pode
+  // sobreviver — e contém os dados REAIS do utilizador. Sem isto, a app re-fazia o seed
+  // e os dados acumulados "desapareciam", substituídos pelo histórico inicial.
+  if(!expenses.length&&(metas.find(m=>m.key==='seeded')||localStorage.getItem('splitz_has_data')==='1')){
+    await restoreFromBackup();}
   for(const e of expenses){if(!e.type){e.type=catType(e.category)||'outras';if(e.shared===undefined)e.shared=true;await put('expenses',e);}}
   if(!categories.some(c=>c.type==='tobias')){
     categories.push({name:'Comida',type:'tobias',budget:0,color:'#fb923c'},{name:'Veterinário',type:'tobias',budget:0,color:'#67e8f9'},{name:'Acessórios',type:'tobias',budget:0,color:'#a3e635'});
@@ -1172,7 +1204,8 @@ function bind(){
       const v={type:'outras',name:n,domain:d};
       v.id=await put('vendors',v);vendors.push(v);}}
   _metas=metas;
-  const needSeed=typeof SEED_ENC!=='undefined'&&SEED_ENC&&!expenses.length&&!metas.find(m=>m.key==='seeded');
+  // Só fazer seed se NUNCA existiram dados (nem meta 'seeded', nem flag durável).
+  const needSeed=typeof SEED_ENC!=='undefined'&&SEED_ENC&&!expenses.length&&!metas.find(m=>m.key==='seeded')&&localStorage.getItem('splitz_has_data')!=='1';
   if(sessionStorage.getItem('splitz_unlocked')==='1'&&!needSeed)unlockDone();
   else if(pinData()&&!needSeed)showLock('pin');
   else showLock('pw');
@@ -1180,12 +1213,13 @@ function bind(){
 
 async function continueAfterUnlock(){
   if(_started)return;_started=true;
-  if(SEED_DATA&&!expenses.length&&!_metas.find(m=>m.key==='seeded')){
+  if(SEED_DATA&&!expenses.length&&!_metas.find(m=>m.key==='seeded')&&localStorage.getItem('splitz_has_data')!=='1'){
     categories=SEED_DATA.categories;await put('meta',{key:'categories',value:categories});
     people=SEED_DATA.people;await put('meta',{key:'people',value:people});
     await clearStore('vendors');for(const v of SEED_DATA.vendors)await put('vendors',v);vendors=SEED_DATA.vendors.slice();
     for(const x of SEED_DATA.expenses)await put('expenses',x);expenses=SEED_DATA.expenses.slice();
     await put('meta',{key:'seeded',value:true});
+    backupExpenses(); // grava backup + marca a flag durável 'splitz_has_data'
     setTimeout(()=>toast('📊 Histórico 2020–2026 carregado ✓'),600);
   }
   $('#fDate').value=new Date().toISOString().slice(0,10);
